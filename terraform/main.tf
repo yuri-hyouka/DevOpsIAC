@@ -13,6 +13,21 @@ provider "aws" {
   region  = "us-east-1"
 }
 
+
+resource "aws_instance" "app_server" {
+  #subnet_id     = aws_subnet.main.id
+  key_name      = "iac-alura"
+  ami           = "ami-0779caf41f9ba54f0"
+  instance_type = "t2.micro"
+
+  tags = {
+    Name = "Terraform Ansible Python"
+  }
+}
+
+
+
+/*
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 
@@ -30,19 +45,7 @@ resource "aws_subnet" "main" {
     Name = "main-subnet"
   }
 }
-
-resource "aws_instance" "app_server" {
-  subnet_id     = aws_subnet.main.id
-  key_name      = "iac-alura"
-  ami           = "ami-0779caf41f9ba54f0"
-  instance_type = "t2.micro"
-
-  tags = {
-    Name = "Primeira instancia AWS"
-  }
-}
-
-
+*/
 
 
 /*
