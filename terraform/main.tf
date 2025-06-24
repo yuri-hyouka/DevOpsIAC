@@ -33,7 +33,8 @@ resource "aws_subnet" "main" {
 
 
 resource "aws_instance" "app_server" {
-  subnet_id     = aws_subnet.main.id   
+  subnet_id     = aws_subnet.main.id
+  key_name      = "iac-alura"   
   ami           = "ami-0779caf41f9ba54f0"
   instance_type = "t2.micro"
 
