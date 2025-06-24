@@ -31,14 +31,25 @@ resource "aws_subnet" "main" {
   }
 }
 
-
 resource "aws_instance" "app_server" {
   subnet_id     = aws_subnet.main.id
-  key_name      = "iac-alura"   
+  key_name      = "iac-alura"
   ami           = "ami-0779caf41f9ba54f0"
   instance_type = "t2.micro"
 
   tags = {
-    Name = "Primeira instancia"
+    Name = "Primeira instancia AWS"
   }
 }
+
+
+
+
+/*
+user_data = <<-EOF
+                #!/bin/bash
+                cd /home/admin
+                echo "<h1>Mensagem a ser mostrada</h1>" > index.html
+                nohup busybox httpd -f -p 8080 &
+                EOF
+*/
