@@ -16,3 +16,20 @@
           update_cache: yes
 
       become: yes
+
+    - name: Instalando dependencias do python com pip(Django e Django Rest)
+      pip:
+        virtualenv: /home/admin/tcc/venv
+        name:
+          - django 
+          - djangorestframework
+    
+    - name: Iniciando Projeto venv
+      shell:  '. /home/admin/tcc/venv/bin/activate; django-admin startproject setup /home/admin/tcc/'
+
+    - name: Alterando o Hosts do settings
+      lineinfile: #alterar linha em arquivo
+        path: /home/admin/tcc/setup/settings.py
+        regexp: 'ALLOWED_HOSTS'
+        line: 'ALLOWED_HOSTS = ["*"]'
+        backrefs: yes #se nao achar, nao faz nada
