@@ -14,14 +14,25 @@ provider "aws" {
 }
 
 
-resource "aws_instance" "app_server" {
+resource "aws_instance" "Alfa1" {
   #subnet_id     = aws_subnet.main.id
   key_name      = "iac-alura"
   ami           = "ami-0779caf41f9ba54f0"
   instance_type = "t2.micro"
 
   tags = {
-    Name = "Terraform Ansible Python"
+    Name = "Alfa1"
+  }
+}
+
+resource "aws_instance" "Beta1" {
+  #subnet_id     = aws_subnet.main.id
+  key_name      = "iac-alura"
+  ami           = "ami-0779caf41f9ba54f0"
+  instance_type = "t2.micro"
+
+  tags = {
+    Name = "Beta1"
   }
 }
 

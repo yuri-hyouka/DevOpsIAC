@@ -1,0 +1,85 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: "Atualizando Repositório"
+      apt:
+        update_cache: yes
+    
+    - name: "Instalando Dependências"
+      apt:
+        pkg: 
+        - apache2
+        - mariadb-server
+        - curl
+        - php 
+        - php-mysql 
+        - php-curl 
+        - php-gd 
+        - php-mbstring 
+        - php-xml 
+        - php-xmlrpc 
+        - php-soap 
+        - php-intl 
+        - php-zip 
+        - libapache2-mod-php
+        - python3-pymysql
+
+        state: latest
+    
+#    - name: "Criando Banco de Dados para Wordpress"
+#      community.mysql.mysql_db:
+#        name: wordpress
+#        state: present
+
+    - name: "Baixando Wordpress"
+      shell: "cd /tmp; curl -O https://wordpress.org/latest.tar.gz; tar -xvzf latest.tar.gz;"
+    
+    - name: "Movendo Wordpress para Diretório do Apache"
+      copy:
+        src: /tmp/wordpress
+        remote_src: yes 
+        dest: /var/www/html
+    
+    - name: "Alterando Dono, Grupo e Permissões"
+      file:
+        path: /var/www/html/wordpress
+        owner: www-data
+        group: www-data
+        recurse: yes
+        state: directory
+        mode: 755
+    
+    - name: "Configurando o Apache"
+      copy:
+        dest: /etc/apache2/sites-available/wordpress.conf
+        content: |
+          <VirtualHost *:80>
+            ServerAdmin admin@seusite.com
+            DocumentRoot /var/www/html/wordpress
+            ServerName seusite.com
+            <Directory /var/www/html/wordpress>
+                Options Indexes FollowSymLinks
+                AllowOverride All
+                Require all granted
+            </Directory>
+            ErrorLog ${APACHE_LOG_DIR}/wordpress_error.log
+            CustomLog ${APACHE_LOG_DIR}/wordpress_access.log combined
+          </VirtualHost>
+
+    - name: Habilitar site WordPress (a2ensite)
+      command: a2ensite wordpress.conf
+      args:
+        creates: /etc/apache2/sites-enabled/wordpress.conf
+    
+    - name: Habilitar Módulo rewrite 
+      command: a2enmod rewrite
+      args:
+        creates: /etc/apache2/mods-enabled/rewrite.load
+    
+    - name: Reload no modulo do Apache
+      service:
+        name: apache2
+        state: reloaded 
+
+
