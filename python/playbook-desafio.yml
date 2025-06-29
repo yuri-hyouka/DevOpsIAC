@@ -1,0 +1,26 @@
+- hosts: wordpress
+  become: yes
+  tasks:
+    - name: Atualizando Repositório
+      apt:
+        update_cache: yes
+
+    - name: Instalando Dependências
+      pkg:
+        - python3
+        - python3-pip
+        - python3-venv
+        - virtualenv
+      state: latest
+
+    - name: Configurando ambiente virtual
+      pip:
+        virtualenv: /home/admin/avatar/venv
+        name:
+          - django
+          - djangorestframework
+          - requests
+
+    - name: Iniciando Projeto venv
+      shell:  '. /home/admin/tcc/avatar/bin/activate;'
+
