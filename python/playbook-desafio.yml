@@ -22,5 +22,5 @@
           - requests
 
     - name: Iniciando Projeto venv
-      shell:  '. /home/admin/tcc/avatar/bin/activate;'
+      shell:  '. /home/admin/tcc/avatar/bin/activate'
 
