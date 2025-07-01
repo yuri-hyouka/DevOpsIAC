@@ -1,6 +1,11 @@
 ---
 - hosts: all
   become: yes
+  handlers:
+    - name: restart apache
+      service:
+        name: apache2
+        state: restarted
   tasks:
     - name: "Atualizando Repositório"
       apt:
@@ -26,14 +31,16 @@
         - python3-pymysql
 
         state: latest
-    
-#    - name: "Criando Banco de Dados para Wordpress"
-#      community.mysql.mysql_db:
-#        name: wordpress
-#        state: present
+
+    #- name: "Baixando Wordpress"
+    #  shell: "cd /tmp; curl -O https://wordpress.org/latest.tar.gz; tar -xvzf latest.tar.gz;"
 
     - name: "Baixando Wordpress"
-      shell: "cd /tmp; curl -O https://wordpress.org/latest.tar.gz; tar -xvzf latest.tar.gz;"
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /tmp
+        remote_src: yes
+
     
     - name: "Movendo Wordpress para Diretório do Apache"
       copy:
@@ -47,30 +54,23 @@
         owner: www-data
         group: www-data
         recurse: yes
-        state: directory
-        mode: 755
+        #state: directory
+        mode: 0755
     
     - name: "Configurando o Apache"
       copy:
+        src: files/wordpress.conf
         dest: /etc/apache2/sites-available/wordpress.conf
-        content: |
-          <VirtualHost *:80>
-            ServerAdmin admin@seusite.com
-            DocumentRoot /var/www/html/wordpress
-            ServerName seusite.com
-            <Directory /var/www/html/wordpress>
-                Options Indexes FollowSymLinks
-                AllowOverride All
-                Require all granted
-            </Directory>
-            ErrorLog ${APACHE_LOG_DIR}/wordpress_error.log
-            CustomLog ${APACHE_LOG_DIR}/wordpress_access.log combined
-          </VirtualHost>
+      notify:
+        - restart apache
 
     - name: Habilitar site WordPress (a2ensite)
       command: a2ensite wordpress.conf
       args:
         creates: /etc/apache2/sites-enabled/wordpress.conf
+    
+    - name: Desabilitar site Padrão (a2dissite)
+      command: a2dissite 000-default.conf
     
     - name: Habilitar Módulo rewrite 
       command: a2enmod rewrite
@@ -80,6 +80,61 @@
     - name: Reload no modulo do Apache
       service:
         name: apache2
-        state: reloaded 
+        state: reloaded
+    
+    - name: "Criando Banco de Dados para Wordpress"
+      community.mysql.mysql_db:
+        name: wordpress_db
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+    - name: Criando usuário com permissões
+      community.mysql.mysql_user:
+        name: wordpress_user
+        password: 123456
+        priv: 'wordpress_db.*:SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,ALTER'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+    - name: "Criando uma cópia do arquivo de configuração do wordpress"
+      copy:
+        src: /var/www/html/wordpress/wp-config-sample.php 
+        dest: /var/www/html/wordpress/wp-config.php
+        force: no
+        remote_src: yes
+
+    - name: Substituindo credenciais no arquivo de configuração
+      replace:
+        path: /var/www/html/wordpress/wp-config.php
+        regexp: '{{ item.regexp }}'
+        replace: '{{ item.replace }}'
+      with_items:
+      - {regexp: 'database_name_here', replace: 'wordpress_db'}
+      - {regexp: 'username_here', replace: 'wordpress_user'}
+      - {regexp: 'password_here', replace: '123456'}
+    
+    - name: "Alterando Dono, Grupo e Permissões"
+      file:
+        path: /var/www/html/wordpress
+        owner: www-data
+        group: www-data
+        recurse: yes
+        #state: directory
+        mode: 0755
+    
+#    - name: Replace a localhost entry searching for a literal string to avoid escaping
+#      ansible.builtin.lineinfile:
+#        path: '/var/www/html/wordpress/wp-config.php'
+#        search_string: "{{ item.search_string }}"
+#        line: "{{ item.line }}"
+#      with_items:
+#      - { search_string: "define( 'AUTH_KEY',         'put your unique phrase here' );", line: "define('AUTH_KEY',         'M1gEa2JY1l}ZpB/SO!9,J2/+1qIkv:|Uamj3ZHq-#e?enUh`mZ~doh{c9j33fs?v');"}
+#      - { search_string: "define( 'SECURE_AUTH_KEY',  'put your unique phrase here' );", line: "define('SECURE_AUTH_KEY',  '?a} _1de$J+Zs4K04td5!F>0eQ|K&JpE-JOMSO@.x+S*z8lU6;l&|7w.K5zC0O*q');"}
+#      - { search_string: "define( 'LOGGED_IN_KEY',    'put your unique phrase here' );", line: "define('LOGGED_IN_KEY',    'L1wUM1q!2|h0]8Sk7o[yP+IFQJ4x{ShE}h![5TM4d,@;?y,$_hzut+Rj2v6%f(UA');"}
+#      - { search_string: "define( 'NONCE_KEY',        'put your unique phrase here' );", line: "define('NONCE_KEY',        'sP-=A6Ky/Xdmh?Xjrz^6n,?I/Tc76VSPgUjmQ[hU=^|#J?gUe[`=3|(Y0BPe>_G8');"}
+#      - { search_string: "define( 'AUTH_SALT',        'put your unique phrase here' );", line: "define('AUTH_SALT',        'fu`rWyp3$`t jS!OMMs~>2e+|S|w43nXC7=QVneRD8-nfl`_5Ibw29&y&/A-,).s');"}
+#      - { search_string: "define( 'SECURE_AUTH_SALT', 'put your unique phrase here' );", line: "define('SECURE_AUTH_SALT', ')H@G&E4An=9`GQ*H+]~_u$k-vdDLeC>JD@AxTAwL-Ll(c9v+2F(sj(-G:}BM6hKD');"}
+#      - { search_string: "define( 'LOGGED_IN_SALT',   'put your unique phrase here' );", line: "define('LOGGED_IN_SALT',   'Ji tOfH-/YS>cnh4#/zQk%SB6,PNZ1/ {(}?Uj9L{sMK51m=G7(_A/BHR{0DU;tW');"}
+#      - { search_string: "define( 'NONCE_SALT',       'put your unique phrase here' );", line: "define('NONCE_SALT',       '9l|t-3N)HX^SD##t!^lJ9+,27A[oABp^,(.ZzpinV{+;F^h%W[Nv3nRi}9wPbTlj');"}
 
 
