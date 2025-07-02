@@ -1,2 +1,5 @@
 [wordpress]
-54.211.206.209 ansible_user=admin ansible_ssh_private_key_file='/home/hyouka/DevOpsIAC/ansible/iac-alura.pem'
+13.221.190.204 ansible_user=admin ansible_ssh_private_key_file='/home/hyouka/DevOpsIAC/ansible/iac-alura.pem'
+
+[mysql]
+3.82.231.216 ansible_user=admin ansible_ssh_private_key_file='/home/hyouka/DevOpsIAC/ansible/iac-alura.pem'

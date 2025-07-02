@@ -1,8 +1,8 @@
 <VirtualHost *:80>
             ServerAdmin admin@seusite.com
-            DocumentRoot /var/www/html/wordpress
+            DocumentRoot {{ wp_dir }}
             ServerName seusite.com
-            <Directory /var/www/html/wordpress>
+            <Directory {{ wp_dir }}>
                 Options Indexes FollowSymLinks
                 AllowOverride All
                 Require all granted
