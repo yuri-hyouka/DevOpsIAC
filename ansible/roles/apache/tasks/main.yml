@@ -1,0 +1,22 @@
+---
+    - name: "Atualizando Repositório"
+      apt:
+        update_cache: yes
+    
+    - name: "Instalando Dependências"
+      apt:
+        pkg: 
+        - apache2
+        - curl
+        - php 
+        - php-mysql 
+        - php-curl 
+        - php-gd 
+        - php-mbstring 
+        - php-xml 
+        - php-xmlrpc 
+        - php-soap 
+        - php-intl 
+        - php-zip 
+        - libapache2-mod-php
+        state: latest

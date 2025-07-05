@@ -1,0 +1,73 @@
+---
+    - name: "Baixando Wordpress"
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /tmp
+        remote_src: yes
+    
+    - name: "Movendo Wordpress para Diretório do Apache"
+      copy:
+        src: /tmp/wordpress
+        remote_src: yes 
+        dest: /var/www/html
+    
+    - name: "Alterando Dono, Grupo e Permissões"
+      file:
+        path: /var/www/html/wordpress
+        owner: www-data
+        group: www-data
+        recurse: yes
+        #state: directory
+        mode: 0755
+    
+    - name: "Configurando o Apache"
+      template:
+        src: templates/wordpress.conf.j2
+        dest: /etc/apache2/sites-available/wordpress.conf
+      notify:
+        - restart apache
+
+    - name: Habilitar site WordPress (a2ensite)
+      command: a2ensite wordpress.conf
+      args:
+        creates: /etc/apache2/sites-enabled/wordpress.conf
+    
+    - name: Desabilitar site Padrão (a2dissite)
+      command: a2dissite 000-default.conf
+    
+    - name: Habilitar Módulo rewrite 
+      command: a2enmod rewrite
+      args:
+        creates: /etc/apache2/mods-enabled/rewrite.load
+    
+    - name: Reload no modulo do Apache
+      service:
+        name: apache2
+        state: reloaded
+
+    - name: "Criando uma cópia do arquivo de configuração do wordpress"
+      copy:
+        src: '{{ wp_dir }}/wp-config-sample.php' 
+        dest: '{{ wp_dir }}/wp-config.php'
+        force: no
+        remote_src: yes
+
+    - name: Substituindo credenciais no arquivo de configuração
+      replace:
+        path: '{{ wp_dir }}/wp-config.php'
+        regexp: '{{ item.regexp }}'
+        replace: '{{ item.replace }}'
+      with_items:
+      - {regexp: 'database_name_here', replace: '{{ wp_db_name }}'}
+      - {regexp: 'username_here', replace: '{{ wp_db_user }}'}
+      - {regexp: 'password_here', replace: '{{ wp_db_pass }}'}
+      - {regexp: 'localhost', replace: '{{ wp_db_ip }}'}
+    
+    - name: "Alterando Dono, Grupo e Permissões"
+      file:
+        path: /var/www/html/wordpress
+        owner: www-data
+        group: www-data
+        recurse: yes
+        #state: directory
+        mode: 0755
